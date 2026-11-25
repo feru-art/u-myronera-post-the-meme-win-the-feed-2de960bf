@@ -4,11 +4,16 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
+// Accepts https://x.com/<handle>/status/<digits> and the twitter.com,
+// www./mobile. and /i/web/status/<id> variants.
+const POST_URL_PATTERN =
+  /^https:\/\/(www\.|mobile\.)?(x\.com|twitter\.com)\/([A-Za-z0-9_]+)\/(i\/web\/)?status\/(\d+)$/;
+
 const postPath = new URL("./POST.json", import.meta.url);
 
 const raw = readFileSync(postPath, "utf8");
 if (raw.length === 0 || raw.trim().length === 0) {
-  throw new Error("POST.json is empty");
+  throw new Error("POST.json is empty (no post address to submit)");
 }
 
 let parsed: unknown;
@@ -32,11 +37,11 @@ if (url.includes("?") || url.includes("#")) {
   throw new Error("post url must not carry a query string or fragment");
 }
 
-// Accept https://x.com/<handle>/status/<digits> and the twitter.com,
-// www./mobile. and /i/web/status/<id> variants.
-const pattern =
-  /^https:\/\/(www\.|mobile\.)?(x\.com|twitter\.com)\/([A-Za-z0-9_]+)\/(i\/web\/)?status\/(\d+)$/;
-const match = pattern.exec(url);
+if (!url.startsWith("https://")) {
+  throw new Error("post url must use https");
+}
+
+const match = POST_URL_PATTERN.exec(url);
 if (match === null) {
   throw new Error("post url is not a valid X post address");
 }
